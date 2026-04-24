@@ -34,6 +34,10 @@ const matrixFor = (originalIndex: number): [number, number] | null => {
 const onSelect = (idx: number): void => {
   selectedOriginalIndex.value = idx
 }
+
+const onDeselect = (): void => {
+  selectedOriginalIndex.value = null
+}
 </script>
 
 <template>
@@ -47,13 +51,18 @@ const onSelect = (idx: number): void => {
     <div v-if="!keyboard" class="text-sm text-slate-500 py-8 text-center">
       KLE RAW データを入力するとここにプレビューが表示されます
     </div>
-    <div v-else class="overflow-auto bg-slate-100 rounded border border-slate-200">
+    <div
+      v-else
+      class="overflow-auto bg-slate-100 rounded border border-slate-200"
+      @click.self="onDeselect"
+    >
       <svg
         :viewBox="vb.str"
         :width="vb.w"
         :height="vb.h"
         xmlns="http://www.w3.org/2000/svg"
         class="block"
+        @click.self="onDeselect"
       >
         <KeyShape
           v-for="(k, i) in keys"

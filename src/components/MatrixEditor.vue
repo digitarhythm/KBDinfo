@@ -45,7 +45,9 @@ watch(
 const apply = (): void => {
   if (selectedOriginalIndex.value === null) return
   if (row.value === null || col.value === null) return
-  store.setOverride(selectedOriginalIndex.value, [row.value, col.value])
+  // KLE RAW のラベル自体を "row,col" に書き換える。
+  // 再パース後に preview / JSON / 赤表示はすべて自動追従する。
+  store.applyMatrixToKey(selectedOriginalIndex.value, [row.value, col.value])
 }
 
 const clear = (): void => {

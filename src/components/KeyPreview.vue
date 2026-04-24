@@ -6,30 +6,10 @@ import KeyShape from './KeyShape.vue'
 import { useViewBox } from '../composables/useSvgGeometry'
 
 const store = useConverterStore()
-const { keyboard, selectedOriginalIndex, layoutResult, matrixOverrides, invalidMatrixSet } = storeToRefs(store)
+const { keyboard, selectedOriginalIndex, invalidMatrixSet } = storeToRefs(store)
 
 const keys = computed(() => keyboard.value?.keys ?? [])
 const vb = useViewBox(keys)
-
-const matrixMap = computed<Map<number, [number, number]>>(() => {
-  const m = new Map<number, [number, number]>()
-  if (!keyboard.value) return m
-  const { layout } = layoutResult.value
-  let layoutIndex = 0
-  keyboard.value.keys.forEach((k, i) => {
-    if (k.decal) return
-    const entry = layout[layoutIndex]
-    if (entry) m.set(i, entry.matrix)
-    layoutIndex += 1
-  })
-  return m
-})
-
-const matrixFor = (originalIndex: number): [number, number] | null => {
-  const override = matrixOverrides.value[originalIndex]
-  if (override) return override
-  return matrixMap.value.get(originalIndex) ?? null
-}
 
 const onSelect = (idx: number): void => {
   selectedOriginalIndex.value = idx
@@ -70,7 +50,6 @@ const onDeselect = (): void => {
           :k="k"
           :original-index="i"
           :selected="selectedOriginalIndex === i"
-          :matrix="matrixFor(i)"
           :invalid="invalidMatrixSet.has(i)"
           @select="onSelect"
         />
@@ -78,9 +57,10 @@ const onDeselect = (): void => {
     </div>
     <p v-if="keyboard" class="text-xs text-slate-500 mt-2">
       キーをクリックすると右側パネルで matrix を編集できます。
-      <span class="text-red-600 font-medium">赤色</span>のキーは matrix が
-      <code class="bg-slate-100 px-1 rounded">row,col</code> 形式で
-      指定されていないため、右ペインで手動設定が必要です。
+      <span class="text-red-600 font-medium">赤色</span>のキーは KLE ラベルが
+      <code class="bg-slate-100 px-1 rounded">row,col</code>（カンマ区切り）形式で
+      なく不正なことを示します。matrix 値を上書きしても表示は消えないので、
+      KLE 側のラベルを修正してください。
     </p>
   </div>
 </template>

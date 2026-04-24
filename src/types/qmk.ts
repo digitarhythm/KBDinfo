@@ -1,8 +1,17 @@
 export type MatrixCoord = [row: number, col: number]
 
+/**
+ * matrix の出力値。常に配列としてシリアライズされる。
+ * - KLE ラベルが `row,col` 形式の2数値 → `[row, col]`
+ * - カンマ区切りで複数の数値 → `[n, n, ...]`
+ * - それ以外（例: `"5.6"`, `"Esc"`）→ 単一要素の配列 `[raw_text]`
+ *   （数値と解釈可能なら数値のまま、そうでなければ文字列要素）
+ */
+export type MatrixValue = Array<number | string>
+
 export interface LayoutKey {
   label?: string
-  matrix: MatrixCoord
+  matrix: MatrixValue
   x: number
   y: number
   w?: number

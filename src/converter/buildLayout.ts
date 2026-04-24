@@ -1,5 +1,5 @@
 import type { KleKey, KleKeyboard } from '../types/kle'
-import type { LayoutKey, MatrixCoord } from '../types/qmk'
+import type { LayoutKey, MatrixValue } from '../types/qmk'
 import type { MatrixOverrides } from '../types/app'
 import { WarningCollector } from './warnings'
 import { parseMatrixLabel } from './extractMatrix'
@@ -8,26 +8,6 @@ const round6 = (n: number): number => Math.round(n * 1_000_000) / 1_000_000
 
 const hasSecondaryRect = (k: KleKey): boolean => {
   return k.width2 !== k.width || k.height2 !== k.height || k.x2 !== 0 || k.y2 !== 0
-}
-
-const resolveMatrix = (
-  key: KleKey,
-  originalIndex: number,
-  visibleIndex: number,
-  overrides: MatrixOverrides,
-  warnings: WarningCollector,
-): MatrixCoord => {
-  const override = overrides[originalIndex]
-  if (override) return override
-
-  const fromLabel = parseMatrixLabel(key.labels[0])
-  if (fromLabel) return fromLabel
-
-  if (key.labels[0] && key.labels[0].trim()) {
-    warnings.add('unparsed-label', `ラベル "${key.labels[0].split('\n', 1)[0]}" からmatrix抽出できず`, originalIndex)
-  }
-  warnings.add('fallback-matrix', `[0, ${visibleIndex}] をフォールバックとして割り当て`, originalIndex)
-  return [0, visibleIndex]
 }
 
 // 有効な matrix ソースは KLE ラベル先頭行が `row,col`（カンマ区切り2数値）形式の時のみ。
@@ -40,16 +20,63 @@ export const isStrictCommaMatrixLabel = (label: string | undefined | null): bool
   return STRICT_COMMA_MATRIX.test(head)
 }
 
+// ラベル文字列を matrix 値（常に配列）に変換する。
+//   - カンマで分割し、全トークンが数値なら `[n, n, ...]`
+//   - そうでなければ raw テキストを単一要素として包む `[raw]`
+//     （数値1つなら `[n]`、文字列なら `["Esc"]`）
+const labelToArrayValue = (head: string): MatrixValue => {
+  const parts = head.split(',').map((s) => s.trim())
+  const nums: number[] = []
+  for (const p of parts) {
+    if (p === '') return [head]
+    const n = Number(p)
+    if (!Number.isFinite(n)) return [head]
+    nums.push(n)
+  }
+  return nums
+}
+
+// matrix 解決: override 優先、無ければラベル解析、それも失敗なら
+// KLE ラベル先頭行をそのまま配列として出す。
+// 空ラベルの場合のみフォールバック [0, visibleIndex] に戻す。
+const resolveMatrix = (
+  key: KleKey,
+  originalIndex: number,
+  visibleIndex: number,
+  overrides: MatrixOverrides,
+  warnings: WarningCollector,
+): MatrixValue => {
+  const override = overrides[originalIndex]
+  if (override) return override
+
+  const fromLabel = parseMatrixLabel(key.labels[0])
+  if (fromLabel) return fromLabel
+
+  const head = (key.labels[0] ?? '').split('\n', 1)[0].trim()
+  if (head) {
+    warnings.add(
+      'unparsed-label',
+      `ラベル "${head}" は row,col 形式でないため配列化して出力`,
+      originalIndex,
+    )
+    return labelToArrayValue(head)
+  }
+
+  warnings.add('fallback-matrix', `空ラベルに [0, ${visibleIndex}] をフォールバック`, originalIndex)
+  return [0, visibleIndex]
+}
+
 export interface BuildLayoutResult {
   layout: LayoutKey[]
   warnings: ReturnType<WarningCollector['list']>
   /**
    * matrix のソースが不正なキーの原配列インデックス集合。
-   * 「ユーザー override が未設定」かつ「KLE ラベルが厳密カンマ形式ではない」場合に含まれる。
-   * プレビューで赤表示する対象。
+   * 「KLE ラベルが厳密カンマ形式ではない」場合に含まれる（プレビュー赤表示対象）。
    */
   invalidMatrixIndices: number[]
 }
+
+const matrixKey = (m: MatrixValue): string => m.map((x) => String(x)).join(',')
 
 export const buildLayout = (
   keyboard: KleKeyboard,
@@ -87,14 +114,12 @@ export const buildLayout = (
       key0.ry = round6(key.rotation_y)
     }
 
-    // ソース妥当性判定: override あるなら OK、無ければラベルが厳密カンマ形式かどうか
-    const hasOverride = overrides[originalIndex] !== undefined
-    if (!hasOverride && !isStrictCommaMatrixLabel(key.labels[0])) {
+    if (!isStrictCommaMatrixLabel(key.labels[0])) {
       invalidMatrixIndices.push(originalIndex)
     }
 
     layout.push(key0)
-    const mkey = `${matrix[0]},${matrix[1]}`
+    const mkey = matrixKey(matrix)
     const arr = matrixSeen.get(mkey) ?? []
     arr.push(originalIndex)
     matrixSeen.set(mkey, arr)

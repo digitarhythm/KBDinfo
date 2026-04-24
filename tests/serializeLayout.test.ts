@@ -39,8 +39,15 @@ describe('layout 配列のコンパクト整形', () => {
   })
 
   it('layout 配列の全体は [\\n...\\n    ] で囲まれる', () => {
-    const raw = '[["A","B"]]'
+    const raw = '[["0,0","0,1"]]'
     const { json } = kleToInfoJson(raw, defaultMetadataForm())
     expect(json).toMatch(/"layout": \[\n {16}\{.+\},\n {16}\{.+\}\n {12}\]/)
+  })
+
+  it('row,col 形式でないラベルは matrix を配列として出力（[] で包む）', () => {
+    const raw = '[["Esc","5.6"]]'
+    const { json } = kleToInfoJson(raw, defaultMetadataForm())
+    expect(json).toContain('{"matrix":["Esc"], "x":0, "y":0}')
+    expect(json).toContain('{"matrix":[5.6], "x":1, "y":0}')
   })
 })

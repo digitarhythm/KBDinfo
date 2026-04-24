@@ -12,6 +12,7 @@ import {
   serializeInfoJson,
   KleParseError,
 } from '../converter'
+import { updateKleRawLabels } from '../converter/updateKleRaw'
 
 // KLE の Raw data タブ形式（外側 [...] 無しの行列挙）
 const SAMPLE_KLE = `{name: "Sample 2×2"},
@@ -112,12 +113,36 @@ export const useConverterStore = defineStore('converter', () => {
     matrixOverrides.value = {}
   }
 
+  // RAW テキストを書き換えるヘルパ。失敗時は parseError に詳細を出す
+  const applyLabelUpdatesToRaw = (updates: Map<number, string>): boolean => {
+    try {
+      rawInput.value = updateKleRawLabels(rawInput.value, updates)
+      return true
+    } catch (e) {
+      parseError.value = e instanceof Error ? e.message : String(e)
+      return false
+    }
+  }
+
+  // matrix エディタからの適用: [row, col] を「row,col」ラベルとして KLE RAW に書き戻す
+  const applyMatrixToKey = (originalIndex: number, matrix: MatrixCoord): boolean => {
+    const newLabel = `${matrix[0]},${matrix[1]}`
+    const ok = applyLabelUpdatesToRaw(new Map([[originalIndex, newLabel]]))
+    if (ok) {
+      // 直接ラベル修正したので override は不要
+      setOverride(originalIndex, null)
+    }
+    return ok
+  }
+
   const bulkNumber = (mode: 'by-row' | 'by-col'): void => {
     if (!keyboard.value) return
-    const next: MatrixOverrides = {}
     const visible = keyboard.value.keys
       .map((k, i) => ({ k, i }))
       .filter(({ k }) => !k.decal)
+
+    const updates = new Map<number, string>()
+
     if (mode === 'by-row') {
       const sorted = visible.slice().sort((a, b) => (a.k.y - b.k.y) || (a.k.x - b.k.x))
       const rowBreaks: Array<typeof sorted> = []
@@ -134,7 +159,7 @@ export const useConverterStore = defineStore('converter', () => {
       if (bucket.length > 0) rowBreaks.push(bucket)
       rowBreaks.forEach((row, r) => {
         row.forEach((item, c) => {
-          next[item.i] = [r, c]
+          updates.set(item.i, `${r},${c}`)
         })
       })
     } else {
@@ -153,11 +178,14 @@ export const useConverterStore = defineStore('converter', () => {
       if (bucket.length > 0) colBreaks.push(bucket)
       colBreaks.forEach((col, c) => {
         col.forEach((item, r) => {
-          next[item.i] = [r, c]
+          updates.set(item.i, `${r},${c}`)
         })
       })
     }
-    matrixOverrides.value = next
+
+    if (applyLabelUpdatesToRaw(updates)) {
+      matrixOverrides.value = {}
+    }
   }
 
   const loadSample = (): void => {
@@ -180,6 +208,7 @@ export const useConverterStore = defineStore('converter', () => {
     parse,
     setOverride,
     clearOverrides,
+    applyMatrixToKey,
     bulkNumber,
     loadSample,
   }

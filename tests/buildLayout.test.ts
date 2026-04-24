@@ -61,8 +61,20 @@ describe('buildLayout', () => {
     expect(layout[1].matrix).toEqual([0, 1])
   })
 
-  it('ラベルが未解析な場合フォールバック matrix を割り当て警告を出す', () => {
-    const kb = parse([['Esc', 'Tab']])
+  it('ラベルが row,col 形式でない場合は配列として出力する', () => {
+    const kb = parse([['Esc', '5.6', '5, 6, 7']])
+    const { layout, warnings } = buildLayout(kb)
+    // "Esc" は非数値 → 単一要素の文字列配列
+    expect(layout[0].matrix).toEqual(['Esc'])
+    // "5.6" は単一数値 → [5.6]
+    expect(layout[1].matrix).toEqual([5.6])
+    // "5, 6, 7" は複数数値 → [5, 6, 7]
+    expect(layout[2].matrix).toEqual([5, 6, 7])
+    expect(warnings.some((w) => w.kind === 'unparsed-label')).toBe(true)
+  })
+
+  it('空ラベルはフォールバック [0, visibleIndex] を使う', () => {
+    const kb = parse([['', '']])
     const { layout, warnings } = buildLayout(kb)
     expect(layout[0].matrix).toEqual([0, 0])
     expect(layout[1].matrix).toEqual([0, 1])
@@ -105,17 +117,18 @@ describe('buildLayout', () => {
       expect(invalidMatrixIndices).toEqual([0, 1])
     })
 
-    it('override が設定されているキーは invalid に含めない', () => {
+    it('override が設定されていてもラベルが不正なら invalid（赤表示維持）', () => {
       const kb = parse([['Esc', '0,1', 'Tab']])
       const { invalidMatrixIndices } = buildLayout(kb, { 0: [9, 9], 2: [9, 8] })
-      expect(invalidMatrixIndices).toEqual([])
+      // override で値は救済されるが、ラベル自体が row,col 形式でないので赤表示は続く
+      expect(invalidMatrixIndices).toEqual([0, 2])
     })
 
-    it('一部だけ override の混在ケース', () => {
+    it('一部だけ override の混在ケース（ラベルが不正なキーは赤のまま）', () => {
       const kb = parse([['0,0', 'Esc', '0,2']])
       const { invalidMatrixIndices } = buildLayout(kb, { 1: [0, 1] })
-      // インデックス 1 は override で救済、0 と 2 は厳密カンマなので invalid 無し
-      expect(invalidMatrixIndices).toEqual([])
+      // index 0/2 は厳密カンマ、1 はラベルが不正なので override があっても赤
+      expect(invalidMatrixIndices).toEqual([1])
     })
 
     it('decal キーは invalid 判定の対象外（原配列 index も含まれない）', () => {

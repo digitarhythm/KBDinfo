@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { KleKey } from '../types/kle'
-import type { MatrixCoord } from '../types/qmk'
 import { KEY_UNIT_PX, contrastTextColor } from '../composables/useSvgGeometry'
 
 interface Props {
   k: KleKey
   originalIndex: number
   selected: boolean
-  matrix: MatrixCoord | null
   invalid?: boolean
 }
 const props = defineProps<Props>()
@@ -49,7 +47,6 @@ const fill = computed(() => {
   return props.k.color || '#cccccc'
 })
 const textColor = computed(() => contrastTextColor(fill.value))
-const topLeftLabel = computed(() => (props.k.labels[0] ?? '').split('\n')[0] ?? '')
 const strokeColor = computed(() => {
   if (props.selected) return '#2563eb'
   if (props.invalid) return '#dc2626' // red-600
@@ -66,7 +63,11 @@ const opacity = computed(() => {
   return 1
 })
 const isDashed = computed(() => props.k.decal)
-const matrixText = computed(() => (props.matrix ? `${props.matrix[0]},${props.matrix[1]}` : '—'))
+// KLE ラベル先頭行をそのまま表示する（解析せず文字列扱い）
+const displayText = computed(() => {
+  const head = (props.k.labels[0] ?? '').split('\n', 1)[0] ?? ''
+  return head
+})
 </script>
 
 <template>
@@ -100,26 +101,16 @@ const matrixText = computed(() => (props.matrix ? `${props.matrix[0]},${props.ma
       rx="4"
     />
     <text
-      :x="primary.x + 6"
+      v-if="!k.decal && displayText"
+      :x="primary.x + 5"
       :y="primary.y + 14"
       :fill="textColor"
-      font-size="10"
+      font-size="11"
       font-weight="600"
-      style="pointer-events: none"
-    >
-      {{ topLeftLabel }}
-    </text>
-    <text
-      v-if="!k.decal"
-      :x="primary.x + primary.w - 4"
-      :y="primary.y + primary.h - 4"
-      :fill="textColor"
-      font-size="9"
       font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
-      text-anchor="end"
       style="pointer-events: none"
     >
-      {{ matrixText }}
+      {{ displayText }}
     </text>
   </g>
 </template>

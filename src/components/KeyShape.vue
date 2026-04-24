@@ -9,6 +9,7 @@ interface Props {
   originalIndex: number
   selected: boolean
   matrix: MatrixCoord | null
+  invalid?: boolean
 }
 const props = defineProps<Props>()
 const emit = defineEmits<{ (e: 'select', idx: number): void }>()
@@ -43,11 +44,22 @@ const rotateTransform = computed(() =>
     : undefined,
 )
 
-const fill = computed(() => props.k.color || '#cccccc')
+const fill = computed(() => {
+  if (props.invalid) return '#fecaca' // red-200: matrix ソース不正
+  return props.k.color || '#cccccc'
+})
 const textColor = computed(() => contrastTextColor(fill.value))
 const topLeftLabel = computed(() => (props.k.labels[0] ?? '').split('\n')[0] ?? '')
-const strokeColor = computed(() => (props.selected ? '#2563eb' : '#334155'))
-const strokeWidth = computed(() => (props.selected ? 3 : 1))
+const strokeColor = computed(() => {
+  if (props.selected) return '#2563eb'
+  if (props.invalid) return '#dc2626' // red-600
+  return '#334155'
+})
+const strokeWidth = computed(() => {
+  if (props.selected) return 3
+  if (props.invalid) return 2
+  return 1
+})
 const opacity = computed(() => {
   if (props.k.decal) return 0.45
   if (props.k.ghost) return 0.35

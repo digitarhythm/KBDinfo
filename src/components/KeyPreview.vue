@@ -6,7 +6,7 @@ import KeyShape from './KeyShape.vue'
 import { useViewBox } from '../composables/useSvgGeometry'
 
 const store = useConverterStore()
-const { keyboard, selectedOriginalIndex, layoutResult, matrixOverrides } = storeToRefs(store)
+const { keyboard, selectedOriginalIndex, layoutResult, matrixOverrides, invalidMatrixSet } = storeToRefs(store)
 
 const keys = computed(() => keyboard.value?.keys ?? [])
 const vb = useViewBox(keys)
@@ -71,12 +71,16 @@ const onDeselect = (): void => {
           :original-index="i"
           :selected="selectedOriginalIndex === i"
           :matrix="matrixFor(i)"
+          :invalid="invalidMatrixSet.has(i)"
           @select="onSelect"
         />
       </svg>
     </div>
     <p v-if="keyboard" class="text-xs text-slate-500 mt-2">
-      キーをクリックすると右側パネルで matrix を編集できます
+      キーをクリックすると右側パネルで matrix を編集できます。
+      <span class="text-red-600 font-medium">赤色</span>のキーは matrix が
+      <code class="bg-slate-100 px-1 rounded">row,col</code> 形式で
+      指定されていないため、右ペインで手動設定が必要です。
     </p>
   </div>
 </template>

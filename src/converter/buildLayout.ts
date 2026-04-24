@@ -30,9 +30,25 @@ const resolveMatrix = (
   return [0, visibleIndex]
 }
 
+// 有効な matrix ソースは KLE ラベル先頭行が `row,col`（カンマ区切り2数値）形式の時のみ。
+// 空白を挟んでも可（例: "0, 12"）。それ以外の形式は UI 側で赤表示するため無効扱い。
+const STRICT_COMMA_MATRIX = /^\s*\d+\s*,\s*\d+\s*$/
+
+export const isStrictCommaMatrixLabel = (label: string | undefined | null): boolean => {
+  if (!label) return false
+  const head = label.split('\n', 1)[0]
+  return STRICT_COMMA_MATRIX.test(head)
+}
+
 export interface BuildLayoutResult {
   layout: LayoutKey[]
   warnings: ReturnType<WarningCollector['list']>
+  /**
+   * matrix のソースが不正なキーの原配列インデックス集合。
+   * 「ユーザー override が未設定」かつ「KLE ラベルが厳密カンマ形式ではない」場合に含まれる。
+   * プレビューで赤表示する対象。
+   */
+  invalidMatrixIndices: number[]
 }
 
 export const buildLayout = (
@@ -42,6 +58,7 @@ export const buildLayout = (
   const warnings = new WarningCollector()
   const layout: LayoutKey[] = []
   const matrixSeen = new Map<string, number[]>()
+  const invalidMatrixIndices: number[] = []
   let visibleIndex = 0
 
   keyboard.keys.forEach((key, originalIndex) => {
@@ -70,6 +87,12 @@ export const buildLayout = (
       key0.ry = round6(key.rotation_y)
     }
 
+    // ソース妥当性判定: override あるなら OK、無ければラベルが厳密カンマ形式かどうか
+    const hasOverride = overrides[originalIndex] !== undefined
+    if (!hasOverride && !isStrictCommaMatrixLabel(key.labels[0])) {
+      invalidMatrixIndices.push(originalIndex)
+    }
+
     layout.push(key0)
     const mkey = `${matrix[0]},${matrix[1]}`
     const arr = matrixSeen.get(mkey) ?? []
@@ -85,5 +108,5 @@ export const buildLayout = (
     }
   }
 
-  return { layout, warnings: warnings.list() }
+  return { layout, warnings: warnings.list(), invalidMatrixIndices }
 }

@@ -36,10 +36,14 @@ export const useConverterStore = defineStore('converter', () => {
     return out
   })
 
-  const layoutResult = computed<{ layout: LayoutKey[]; warnings: Warning[] }>(() => {
-    if (!keyboard.value) return { layout: [], warnings: [] }
+  const layoutResult = computed(() => {
+    if (!keyboard.value) {
+      return { layout: [] as LayoutKey[], warnings: [] as Warning[], invalidMatrixIndices: [] as number[] }
+    }
     return buildLayout(keyboard.value, matrixOverrides.value)
   })
+
+  const invalidMatrixSet = computed<Set<number>>(() => new Set(layoutResult.value.invalidMatrixIndices))
 
   const infoJson = computed(() => buildInfoJson(metadata.value, layoutResult.value.layout))
   const jsonText = computed(() => serializeInfoJson(infoJson.value))
@@ -169,6 +173,7 @@ export const useConverterStore = defineStore('converter', () => {
     selectedOriginalIndex,
     visibleKeyIndices,
     layoutResult,
+    invalidMatrixSet,
     infoJson,
     jsonText,
     warnings,

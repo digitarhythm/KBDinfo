@@ -85,4 +85,44 @@ describe('buildLayout', () => {
     expect(layout[2].y).toBe(1)
     expect(layout[2].matrix).toEqual([1, 0])
   })
+
+  describe('invalidMatrixIndices: matrix ソースの妥当性判定', () => {
+    it('厳密なカンマ形式ラベルは invalid に含めない', () => {
+      const kb = parse([['0,0', '1, 2']])
+      const { invalidMatrixIndices } = buildLayout(kb)
+      expect(invalidMatrixIndices).toEqual([])
+    })
+
+    it('カンマ形式以外のラベル（K03/R2C5/文字）は invalid', () => {
+      const kb = parse([['K03', 'R2C5', 'Esc']])
+      const { invalidMatrixIndices } = buildLayout(kb)
+      expect(invalidMatrixIndices).toEqual([0, 1, 2])
+    })
+
+    it('空ラベルのキーも invalid', () => {
+      const kb = parse([['', '']])
+      const { invalidMatrixIndices } = buildLayout(kb)
+      expect(invalidMatrixIndices).toEqual([0, 1])
+    })
+
+    it('override が設定されているキーは invalid に含めない', () => {
+      const kb = parse([['Esc', '0,1', 'Tab']])
+      const { invalidMatrixIndices } = buildLayout(kb, { 0: [9, 9], 2: [9, 8] })
+      expect(invalidMatrixIndices).toEqual([])
+    })
+
+    it('一部だけ override の混在ケース', () => {
+      const kb = parse([['0,0', 'Esc', '0,2']])
+      const { invalidMatrixIndices } = buildLayout(kb, { 1: [0, 1] })
+      // インデックス 1 は override で救済、0 と 2 は厳密カンマなので invalid 無し
+      expect(invalidMatrixIndices).toEqual([])
+    })
+
+    it('decal キーは invalid 判定の対象外（原配列 index も含まれない）', () => {
+      const kb = parse([[{ d: true }, 'Esc', '0,0']])
+      const { invalidMatrixIndices } = buildLayout(kb)
+      // decal(index 0) は除外、0,0(index 1) は厳密カンマ
+      expect(invalidMatrixIndices).toEqual([])
+    })
+  })
 })

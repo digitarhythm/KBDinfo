@@ -13,11 +13,10 @@ import {
   KleParseError,
 } from '../converter'
 
-const SAMPLE_KLE = `[
-  {"name": "Sample 2×2"},
-  ["0,0", "0,1"],
-  ["1,0", "1,1"]
-]`
+// KLE の Raw data タブ形式（外側 [...] 無しの行列挙）
+const SAMPLE_KLE = `{name: "Sample 2×2"},
+["0,0", "0,1"],
+["1,0", "1,1"]`
 
 export const useConverterStore = defineStore('converter', () => {
   const rawInput = ref<string>(SAMPLE_KLE)

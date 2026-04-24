@@ -34,7 +34,7 @@ const fileInput = (e: Event): void => {
       class="input code w-full font-mono text-xs"
       rows="8"
       spellcheck="false"
-      placeholder='keyboard-layout-editor.com の「Raw data」タブの内容を貼り付けてください'
+      placeholder='keyboard-layout-editor.com の「Raw data」タブの内容、または「Download JSON」で取得した JSON を貼り付けてください（両方対応）'
     />
     <p v-if="parseError" class="mt-2 text-sm rounded bg-red-50 border border-red-300 text-red-700 p-2">
       ⚠ {{ parseError }}

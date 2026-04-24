@@ -6,6 +6,8 @@ import BulkMatrixTools from './components/BulkMatrixTools.vue'
 import MetadataForm from './components/MetadataForm.vue'
 import JsonOutput from './components/JsonOutput.vue'
 import WarningsPanel from './components/WarningsPanel.vue'
+
+const version = __APP_VERSION__
 </script>
 
 <template>
@@ -30,7 +32,7 @@ import WarningsPanel from './components/WarningsPanel.vue'
       </div>
     </main>
     <footer class="bg-slate-100 border-t border-slate-200 px-4 py-2 text-xs text-slate-500 text-center">
-      KBDinfo — qmk.fm/converter 代替ツール / すべての処理はブラウザ内で完結します
+      KBDinfo v{{ version }} — qmk.fm/converter 代替ツール / すべての処理はブラウザ内で完結します
     </footer>
   </div>
 </template>

@@ -135,59 +135,6 @@ export const useConverterStore = defineStore('converter', () => {
     return ok
   }
 
-  const bulkNumber = (mode: 'by-row' | 'by-col'): void => {
-    if (!keyboard.value) return
-    const visible = keyboard.value.keys
-      .map((k, i) => ({ k, i }))
-      .filter(({ k }) => !k.decal)
-
-    const updates = new Map<number, string>()
-
-    if (mode === 'by-row') {
-      const sorted = visible.slice().sort((a, b) => (a.k.y - b.k.y) || (a.k.x - b.k.x))
-      const rowBreaks: Array<typeof sorted> = []
-      let currentY = Number.NEGATIVE_INFINITY
-      let bucket: typeof sorted = []
-      for (const item of sorted) {
-        if (Math.abs(item.k.y - currentY) > 0.5) {
-          if (bucket.length > 0) rowBreaks.push(bucket)
-          bucket = []
-          currentY = item.k.y
-        }
-        bucket.push(item)
-      }
-      if (bucket.length > 0) rowBreaks.push(bucket)
-      rowBreaks.forEach((row, r) => {
-        row.forEach((item, c) => {
-          updates.set(item.i, `${r},${c}`)
-        })
-      })
-    } else {
-      const sorted = visible.slice().sort((a, b) => (a.k.x - b.k.x) || (a.k.y - b.k.y))
-      const colBreaks: Array<typeof sorted> = []
-      let currentX = Number.NEGATIVE_INFINITY
-      let bucket: typeof sorted = []
-      for (const item of sorted) {
-        if (Math.abs(item.k.x - currentX) > 0.5) {
-          if (bucket.length > 0) colBreaks.push(bucket)
-          bucket = []
-          currentX = item.k.x
-        }
-        bucket.push(item)
-      }
-      if (bucket.length > 0) colBreaks.push(bucket)
-      colBreaks.forEach((col, c) => {
-        col.forEach((item, r) => {
-          updates.set(item.i, `${r},${c}`)
-        })
-      })
-    }
-
-    if (applyLabelUpdatesToRaw(updates)) {
-      matrixOverrides.value = {}
-    }
-  }
-
   const loadSample = (): void => {
     rawInput.value = SAMPLE_KLE
   }
@@ -209,7 +156,6 @@ export const useConverterStore = defineStore('converter', () => {
     setOverride,
     clearOverrides,
     applyMatrixToKey,
-    bulkNumber,
     loadSample,
   }
 })

@@ -3,7 +3,6 @@ import { onBeforeUnmount, onMounted } from 'vue'
 import KleInput from './components/KleInput.vue'
 import KeyPreview from './components/KeyPreview.vue'
 import MatrixEditor from './components/MatrixEditor.vue'
-import BulkMatrixTools from './components/BulkMatrixTools.vue'
 import MetadataForm from './components/MetadataForm.vue'
 import JsonOutput from './components/JsonOutput.vue'
 import WarningsPanel from './components/WarningsPanel.vue'
@@ -42,7 +41,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleGlobalClick))
       </div>
       <div class="space-y-4">
         <MatrixEditor />
-        <BulkMatrixTools />
         <MetadataForm />
         <WarningsPanel />
       </div>

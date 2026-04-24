@@ -28,6 +28,10 @@ const LAYOUT_KEY_ORDER: Array<keyof LayoutKey> = [
   'ry',
 ]
 
+const INDENT_UNIT = '    '
+
+const indent = (depth: number): string => INDENT_UNIT.repeat(depth)
+
 const orderObject = <T extends object>(
   obj: T,
   order: ReadonlyArray<keyof T>,
@@ -44,13 +48,54 @@ const orderObject = <T extends object>(
   return out as T
 }
 
-export const serializeInfoJson = (info: InfoJson): string => {
-  const layouts: Record<string, { layout: LayoutKey[] }> = {}
-  for (const [name, variant] of Object.entries(info.layouts)) {
-    layouts[name] = {
-      layout: variant.layout.map((k) => orderObject(k, LAYOUT_KEY_ORDER)),
+// layout 要素（キー1つ分）は 1 行にまとめ、
+// キー間のカンマ後だけスペースを入れ、ネストした配列 `[r,c]` は詰める。
+// 出力例: `{"matrix":[0,1], "x":1.5, "y":1}`
+const formatLayoutKey = (k: LayoutKey): string => {
+  const ordered = orderObject(k, LAYOUT_KEY_ORDER)
+  const parts = Object.entries(ordered)
+    .filter(([, v]) => v !== undefined)
+    .map(([key, val]) => `"${key}":${JSON.stringify(val)}`)
+  return '{' + parts.join(', ') + '}'
+}
+
+const formatLayoutArray = (arr: LayoutKey[], depth: number): string => {
+  if (arr.length === 0) return '[]'
+  const lines = arr.map((item) => indent(depth + 1) + formatLayoutKey(item))
+  return '[\n' + lines.join(',\n') + '\n' + indent(depth) + ']'
+}
+
+// 汎用整形: layouts.*.layout 配下の配列のみ 1 行コンパクト形式にする
+const stringifyValue = (value: unknown, depth: number, parentKey: string): string => {
+  if (value === null) return 'null'
+  if (typeof value !== 'object') return JSON.stringify(value)
+
+  if (Array.isArray(value)) {
+    if (parentKey === 'layout') {
+      return formatLayoutArray(value as LayoutKey[], depth)
     }
+    if (value.length === 0) return '[]'
+    const lines = value.map(
+      (item) => indent(depth + 1) + stringifyValue(item, depth + 1, ''),
+    )
+    return '[\n' + lines.join(',\n') + '\n' + indent(depth) + ']'
   }
-  const ordered = orderObject({ ...info, layouts }, KEY_ORDER)
-  return JSON.stringify(ordered, null, 4) + '\n'
+
+  const entries = Object.entries(value as Record<string, unknown>).filter(
+    ([, v]) => v !== undefined,
+  )
+  if (entries.length === 0) return '{}'
+  const lines = entries.map(([k, v]) => {
+    return indent(depth + 1) + JSON.stringify(k) + ': ' + stringifyValue(v, depth + 1, k)
+  })
+  return '{\n' + lines.join(',\n') + '\n' + indent(depth) + '}'
+}
+
+export const serializeInfoJson = (info: InfoJson): string => {
+  const orderedLayouts: Record<string, { layout: LayoutKey[] }> = {}
+  for (const [name, variant] of Object.entries(info.layouts)) {
+    orderedLayouts[name] = { layout: variant.layout }
+  }
+  const ordered = orderObject({ ...info, layouts: orderedLayouts }, KEY_ORDER)
+  return stringifyValue(ordered, 0, '') + '\n'
 }

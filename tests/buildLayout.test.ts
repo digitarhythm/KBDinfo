@@ -9,9 +9,11 @@ describe('buildLayout', () => {
     const kb = parse([['0,0', '0,1', '0,2']])
     const { layout } = buildLayout(kb)
     expect(layout).toHaveLength(3)
-    expect(layout[0]).toMatchObject({ matrix: [0, 0], x: 0, y: 0, label: '0,0' })
+    expect(layout[0]).toMatchObject({ matrix: [0, 0], x: 0, y: 0 })
     expect(layout[1]).toMatchObject({ matrix: [0, 1], x: 1, y: 0 })
     expect(layout[2]).toMatchObject({ matrix: [0, 2], x: 2, y: 0 })
+    // label は出力に含めない
+    expect(layout[0]).not.toHaveProperty('label')
   })
 
   it('w/h が 1 のときは出力に含めない', () => {

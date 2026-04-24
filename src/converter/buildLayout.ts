@@ -69,8 +69,6 @@ export const buildLayout = (
       key0.rx = round6(key.rotation_x)
       key0.ry = round6(key.rotation_y)
     }
-    const firstLine = (key.labels[0] ?? '').split('\n', 1)[0]
-    if (firstLine) key0.label = firstLine
 
     layout.push(key0)
     const mkey = `${matrix[0]},${matrix[1]}`

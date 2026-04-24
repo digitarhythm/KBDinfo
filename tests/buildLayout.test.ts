@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { Serial } from '@ijprest/kle-serial'
+import { deserialize } from '../src/kle/serial'
 import { buildLayout } from '../src/converter/buildLayout'
 
-const parse = (rows: unknown[]) => Serial.deserialize(rows)
+const parse = (rows: unknown[]) => deserialize(rows)
 
 describe('buildLayout', () => {
   it('単純なキーの座標を保持する', () => {

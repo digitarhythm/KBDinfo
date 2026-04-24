@@ -1,4 +1,5 @@
-import { Serial } from '@ijprest/kle-serial'
+import JSON5 from 'json5'
+import { deserialize } from '../kle/serial'
 import type { KleKeyboard } from '../types/kle'
 
 export class KleParseError extends Error {
@@ -13,7 +14,8 @@ export class KleParseError extends Error {
 export const parseKleRaw = (raw: string): KleKeyboard => {
   let rows: unknown
   try {
-    rows = JSON.parse(raw)
+    // KLE raw は JSON5 形式（keyの無引用、末尾カンマを許容）
+    rows = JSON5.parse(raw)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     throw new KleParseError(`JSON構文エラー: ${msg}`, e)
@@ -22,7 +24,7 @@ export const parseKleRaw = (raw: string): KleKeyboard => {
     throw new KleParseError('KLE raw は配列である必要があります')
   }
   try {
-    return Serial.deserialize(rows)
+    return deserialize(rows)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     throw new KleParseError(`KLE構造エラー: ${msg}`, e)

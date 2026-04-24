@@ -203,6 +203,6 @@ export default defineConfig({
 
 ## 11. ライセンス・クレジット
 
+- 本プロジェクトは **MIT License**（`LICENSE` ファイル参照）
 - `@ijprest/kle-serial`（MIT） を利用
 - QMK info.json スキーマを参考
-- 本プロジェクト自体のライセンスは未決定（作業者の決定を待つ）

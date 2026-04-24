@@ -70,4 +70,6 @@ tests/                # Vitest テスト
 
 ## ライセンス
 
-（未定。`@ijprest/kle-serial` の MIT ライセンスに従う部分あり）
+[MIT License](./LICENSE) — Copyright (c) 2026 digitarhythm
+
+依存ライブラリの `@ijprest/kle-serial` も MIT ライセンスです。

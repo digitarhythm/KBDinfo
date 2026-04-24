@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "description": "KLE raw → QMK info.json converter (browser-only, static)",
+  "license": "MIT",
+  "author": "digitarhythm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digitarhythm/KBDinfo.git"
+  },
+  "homepage": "https://digitarhythm.github.io/KBDinfo/",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",

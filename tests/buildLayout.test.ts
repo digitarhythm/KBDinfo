@@ -1,0 +1,86 @@
+import { describe, expect, it } from 'vitest'
+import { Serial } from '@ijprest/kle-serial'
+import { buildLayout } from '../src/converter/buildLayout'
+
+const parse = (rows: unknown[]) => Serial.deserialize(rows)
+
+describe('buildLayout', () => {
+  it('単純なキーの座標を保持する', () => {
+    const kb = parse([['0,0', '0,1', '0,2']])
+    const { layout } = buildLayout(kb)
+    expect(layout).toHaveLength(3)
+    expect(layout[0]).toMatchObject({ matrix: [0, 0], x: 0, y: 0, label: '0,0' })
+    expect(layout[1]).toMatchObject({ matrix: [0, 1], x: 1, y: 0 })
+    expect(layout[2]).toMatchObject({ matrix: [0, 2], x: 2, y: 0 })
+  })
+
+  it('w/h が 1 のときは出力に含めない', () => {
+    const kb = parse([['0,0']])
+    const { layout } = buildLayout(kb)
+    expect(layout[0].w).toBeUndefined()
+    expect(layout[0].h).toBeUndefined()
+  })
+
+  it('w/h が 1 でないときは出力に含める', () => {
+    const kb = parse([[{ w: 2 }, '0,0', { h: 1.5 }, '0,1']])
+    const { layout } = buildLayout(kb)
+    expect(layout[0].w).toBe(2)
+    expect(layout[1].h).toBe(1.5)
+  })
+
+  it('decal キーを除外する', () => {
+    const kb = parse([['0,0', { d: true }, 'decal', '0,1']])
+    const { layout } = buildLayout(kb)
+    expect(layout).toHaveLength(2)
+    expect(layout.map((k) => k.matrix)).toEqual([
+      [0, 0],
+      [0, 1],
+    ])
+  })
+
+  it('回転角度がある場合 r/rx/ry を出力する', () => {
+    const kb = parse([[{ r: 15, rx: 3, ry: 2 }, '0,0']])
+    const { layout } = buildLayout(kb)
+    expect(layout[0].r).toBe(15)
+    expect(layout[0].rx).toBe(3)
+    expect(layout[0].ry).toBe(2)
+  })
+
+  it('二次矩形(x2/y2/w2/h2)に警告を出す', () => {
+    const kb = parse([[{ w: 1.25, h: 2, w2: 1.5, h2: 1, x2: -0.25 }, '0,0']])
+    const { warnings } = buildLayout(kb)
+    expect(warnings.some((w) => w.kind === 'dropped-secondary-rect')).toBe(true)
+  })
+
+  it('matrix override がラベルより優先される', () => {
+    const kb = parse([['0,0', '0,1']])
+    const { layout } = buildLayout(kb, { 0: [9, 9] })
+    expect(layout[0].matrix).toEqual([9, 9])
+    expect(layout[1].matrix).toEqual([0, 1])
+  })
+
+  it('ラベルが未解析な場合フォールバック matrix を割り当て警告を出す', () => {
+    const kb = parse([['Esc', 'Tab']])
+    const { layout, warnings } = buildLayout(kb)
+    expect(layout[0].matrix).toEqual([0, 0])
+    expect(layout[1].matrix).toEqual([0, 1])
+    expect(warnings.some((w) => w.kind === 'fallback-matrix')).toBe(true)
+  })
+
+  it('matrix 重複に警告を出す', () => {
+    const kb = parse([['0,0', '0,0']])
+    const { warnings } = buildLayout(kb)
+    expect(warnings.some((w) => w.kind === 'duplicate-matrix')).toBe(true)
+  })
+
+  it('複数行の y 座標を正しく扱う', () => {
+    const kb = parse([
+      ['0,0', '0,1'],
+      ['1,0', '1,1'],
+    ])
+    const { layout } = buildLayout(kb)
+    expect(layout[0].y).toBe(0)
+    expect(layout[2].y).toBe(1)
+    expect(layout[2].matrix).toEqual([1, 0])
+  })
+})

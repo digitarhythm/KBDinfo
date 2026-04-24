@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from 'vue'
 import KleInput from './components/KleInput.vue'
 import KeyPreview from './components/KeyPreview.vue'
 import MatrixEditor from './components/MatrixEditor.vue'
@@ -6,8 +7,23 @@ import BulkMatrixTools from './components/BulkMatrixTools.vue'
 import MetadataForm from './components/MetadataForm.vue'
 import JsonOutput from './components/JsonOutput.vue'
 import WarningsPanel from './components/WarningsPanel.vue'
+import { useConverterStore } from './stores/useConverterStore'
 
 const version = __APP_VERSION__
+const store = useConverterStore()
+
+// キー以外・フォーム入力以外をクリックしたらキー選択を解除する。
+// キーは data-kle-key を持ち、フォームは input/textarea/select/button を対象とする。
+const handleGlobalClick = (e: MouseEvent): void => {
+  const t = e.target as Element | null
+  if (!t || typeof t.closest !== 'function') return
+  if (t.closest('input, textarea, select, button, label')) return
+  if (t.closest('[data-kle-key]')) return
+  store.selectedOriginalIndex = null
+}
+
+onMounted(() => document.addEventListener('click', handleGlobalClick))
+onBeforeUnmount(() => document.removeEventListener('click', handleGlobalClick))
 </script>
 
 <template>

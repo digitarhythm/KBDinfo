@@ -74,6 +74,7 @@ const displayText = computed(() => {
   <g
     :transform="rotateTransform"
     :opacity="opacity"
+    :data-kle-key="originalIndex"
     style="cursor: pointer"
     @click="emit('select', originalIndex)"
   >
@@ -87,6 +88,7 @@ const displayText = computed(() => {
       :stroke="strokeColor"
       :stroke-width="strokeWidth"
       :stroke-dasharray="isDashed ? '4 4' : undefined"
+      :data-kle-key="originalIndex"
       rx="4"
     />
     <rect
@@ -98,6 +100,7 @@ const displayText = computed(() => {
       :stroke="strokeColor"
       :stroke-width="strokeWidth"
       :stroke-dasharray="isDashed ? '4 4' : undefined"
+      :data-kle-key="originalIndex"
       rx="4"
     />
     <text

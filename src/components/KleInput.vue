@@ -23,10 +23,9 @@ const fileInput = (e: Event): void => {
       📝 KLE RAW 入力
       <div class="ml-auto flex gap-2">
         <label class="btn cursor-pointer">
-          ファイル読込
+          JSON読み込み
           <input type="file" accept=".json,.txt,application/json" class="hidden" @change="fileInput" />
         </label>
-        <button type="button" class="btn" @click="store.loadSample">サンプル読込</button>
       </div>
     </div>
     <textarea

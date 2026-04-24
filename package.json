@@ -1,6 +1,6 @@
 {
   "name": "kbdinfo",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "description": "KLE raw → QMK info.json converter (browser-only, static)",

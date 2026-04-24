@@ -9,6 +9,8 @@ const KEY_ORDER: Array<keyof InfoJson> = [
   'features',
   'matrix_pins',
   'diode_direction',
+  'debounce',
+  'split',
   'processor',
   'bootloader',
   'layouts',

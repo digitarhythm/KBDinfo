@@ -41,6 +41,37 @@ export interface Features {
   audio?: boolean
 }
 
+export interface SplitBootmagic {
+  matrix: [row: number, col: number]
+}
+
+export interface SplitHandedness {
+  pin: string
+}
+
+export interface SplitMatrixPinsSide {
+  rows?: string[]
+  cols?: string[]
+}
+
+export interface SplitMatrixPins {
+  right?: SplitMatrixPinsSide
+  left?: SplitMatrixPinsSide
+}
+
+export interface SplitSerial {
+  driver: string
+  pin: string
+}
+
+export interface SplitConfig {
+  enabled?: boolean
+  bootmagic?: SplitBootmagic
+  handedness?: SplitHandedness
+  matrix_pins?: SplitMatrixPins
+  serial?: SplitSerial
+}
+
 export interface InfoJson {
   keyboard_name: string
   manufacturer?: string
@@ -50,6 +81,8 @@ export interface InfoJson {
   features?: Features
   matrix_pins?: MatrixPins
   diode_direction?: DiodeDirection
+  debounce?: number
+  split?: SplitConfig
   processor?: string
   bootloader?: string
   layouts: {

@@ -91,12 +91,22 @@ const FEATURE_KEYS: Array<keyof typeof metadata.value.features> = [
         </select>
       </div>
       <div>
+        <label class="label">debounce (ms)</label>
+        <input
+          v-model="metadata.debounce"
+          type="number"
+          min="0"
+          class="input"
+          placeholder="例: 5"
+        />
+      </div>
+      <div>
         <label class="label">processor</label>
         <select v-model="metadata.processor" class="input">
           <option v-for="p in PROCESSORS" :key="p" :value="p">{{ p }}</option>
         </select>
       </div>
-      <div class="col-span-2">
+      <div>
         <label class="label">bootloader</label>
         <select v-model="metadata.bootloader" class="input">
           <option v-for="b in BOOTLOADERS" :key="b" :value="b">{{ b }}</option>
@@ -111,6 +121,66 @@ const FEATURE_KEYS: Array<keyof typeof metadata.value.features> = [
           <input type="checkbox" v-model="metadata.features[f]" />
           {{ f }}
         </label>
+      </div>
+    </div>
+
+    <div class="mt-4 border-t border-slate-200 pt-3">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm font-semibold text-slate-700">🔗 split keyboard 設定</div>
+        <label class="inline-flex items-center gap-1 text-sm">
+          <input type="checkbox" v-model="metadata.split.enabled" />
+          enabled
+        </label>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="col-span-2">
+          <label class="label">bootmagic.matrix（row,col 形式）</label>
+          <input
+            v-model="metadata.split.bootmagic_matrix"
+            class="input"
+            placeholder="例: 4, 5"
+          />
+        </div>
+        <div class="col-span-2">
+          <label class="label">handedness.pin</label>
+          <input
+            v-model="metadata.split.handedness_pin"
+            class="input"
+            placeholder="例: GP20"
+          />
+        </div>
+        <div class="col-span-2">
+          <label class="label">split.matrix_pins.right.rows</label>
+          <input
+            v-model="metadata.split.matrix_pins_right_rows"
+            class="input"
+            placeholder="例: GP4, GP5, GP6, GP7"
+          />
+        </div>
+        <div class="col-span-2">
+          <label class="label">split.matrix_pins.right.cols</label>
+          <input
+            v-model="metadata.split.matrix_pins_right_cols"
+            class="input"
+            placeholder="例: GP0, GP1, GP2"
+          />
+        </div>
+        <div>
+          <label class="label">serial.driver</label>
+          <input
+            v-model="metadata.split.serial_driver"
+            class="input"
+            placeholder="vendor"
+          />
+        </div>
+        <div>
+          <label class="label">serial.pin</label>
+          <input
+            v-model="metadata.split.serial_pin"
+            class="input"
+            placeholder="例: GP1"
+          />
+        </div>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 import type { KleKeyboard } from '../types/kle'
-import type { InfoJson, LayoutKey } from '../types/qmk'
-import type { MetadataFormState } from '../types/app'
+import type { InfoJson, LayoutKey, SplitConfig } from '../types/qmk'
+import type { MetadataFormState, SplitFormState } from '../types/app'
 
 const splitCsv = (s: string): string[] =>
   s.split(/[,\s]+/).map((x) => x.trim()).filter((x) => x.length > 0)
@@ -55,8 +55,51 @@ export const buildInfoJson = (
     info.diode_direction = form.diode_direction
   }
 
+  const debounceNum = Number(form.debounce)
+  if (form.debounce !== '' && Number.isFinite(debounceNum) && debounceNum >= 0) {
+    info.debounce = debounceNum
+  }
+
+  const split = buildSplit(form.split)
+  if (split) info.split = split
+
   if (form.processor) info.processor = form.processor
   if (form.bootloader) info.bootloader = form.bootloader
 
   return info
+}
+
+const parseMatrixPair = (s: string): [number, number] | null => {
+  const m = /^(\d+)\s*,\s*(\d+)$/.exec(s.trim())
+  return m ? [Number(m[1]), Number(m[2])] : null
+}
+
+const buildSplit = (s: SplitFormState): SplitConfig | null => {
+  const out: SplitConfig = {}
+
+  if (s.enabled) out.enabled = true
+
+  const mx = parseMatrixPair(s.bootmagic_matrix)
+  if (mx) out.bootmagic = { matrix: mx }
+
+  if (s.handedness_pin.trim()) {
+    out.handedness = { pin: s.handedness_pin.trim() }
+  }
+
+  const rightRows = splitCsv(s.matrix_pins_right_rows)
+  const rightCols = splitCsv(s.matrix_pins_right_cols)
+  if (rightRows.length > 0 || rightCols.length > 0) {
+    out.matrix_pins = { right: {} }
+    if (rightRows.length > 0) out.matrix_pins.right!.rows = rightRows
+    if (rightCols.length > 0) out.matrix_pins.right!.cols = rightCols
+  }
+
+  if (s.serial_pin.trim()) {
+    out.serial = {
+      driver: s.serial_driver || 'vendor',
+      pin: s.serial_pin.trim(),
+    }
+  }
+
+  return Object.keys(out).length > 0 ? out : null
 }

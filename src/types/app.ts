@@ -14,6 +14,16 @@ export interface Warning {
   keyIndex?: number
 }
 
+export interface SplitFormState {
+  enabled: boolean
+  bootmagic_matrix: string
+  handedness_pin: string
+  matrix_pins_right_rows: string
+  matrix_pins_right_cols: string
+  serial_driver: string
+  serial_pin: string
+}
+
 export interface MetadataFormState {
   keyboard_name: string
   manufacturer: string
@@ -29,6 +39,8 @@ export interface MetadataFormState {
     cols: string
   }
   diode_direction: DiodeDirection
+  debounce: string
+  split: SplitFormState
   processor: string
   bootloader: string
   features: Features
@@ -56,6 +68,16 @@ export const defaultMetadataForm = (): MetadataFormState => ({
     cols: '',
   },
   diode_direction: 'COL2ROW',
+  debounce: '',
+  split: {
+    enabled: false,
+    bootmagic_matrix: '',
+    handedness_pin: '',
+    matrix_pins_right_rows: '',
+    matrix_pins_right_cols: '',
+    serial_driver: 'vendor',
+    serial_pin: '',
+  },
   processor: 'atmega32u4',
   bootloader: 'atmel-dfu',
   features: {

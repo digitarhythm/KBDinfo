@@ -81,10 +81,28 @@ describe('buildLayout', () => {
     expect(warnings.some((w) => w.kind === 'fallback-matrix')).toBe(true)
   })
 
-  it('matrix 重複に警告を出す', () => {
+  it('matrix 重複に警告を出し duplicateMatrixIndices に含める', () => {
     const kb = parse([['0,0', '0,0']])
-    const { warnings } = buildLayout(kb)
+    const { warnings, duplicateMatrixIndices } = buildLayout(kb)
     expect(warnings.some((w) => w.kind === 'duplicate-matrix')).toBe(true)
+    expect(duplicateMatrixIndices.sort()).toEqual([0, 1])
+  })
+
+  it('deletedIndices に含まれるキーは出力から除外される', () => {
+    const kb = parse([['0,0', '0,1', '0,2']])
+    const { layout } = buildLayout(kb, {}, new Set([1]))
+    expect(layout).toHaveLength(2)
+    expect(layout.map((k) => k.matrix)).toEqual([
+      [0, 0],
+      [0, 2],
+    ])
+  })
+
+  it('削除された後で残ったキーのみ重複判定される', () => {
+    // 3つとも [0,0] だが 2つ削除すれば最後の1つは重複しない
+    const kb = parse([['0,0', '0,0', '0,0']])
+    const { duplicateMatrixIndices } = buildLayout(kb, {}, new Set([0, 1]))
+    expect(duplicateMatrixIndices).toEqual([])
   })
 
   it('複数行の y 座標を正しく扱う', () => {
@@ -117,18 +135,24 @@ describe('buildLayout', () => {
       expect(invalidMatrixIndices).toEqual([0, 1])
     })
 
-    it('override が設定されていてもラベルが不正なら invalid（赤表示維持）', () => {
+    it('override が設定されているキーは invalid から除外される', () => {
       const kb = parse([['Esc', '0,1', 'Tab']])
       const { invalidMatrixIndices } = buildLayout(kb, { 0: [9, 9], 2: [9, 8] })
-      // override で値は救済されるが、ラベル自体が row,col 形式でないので赤表示は続く
-      expect(invalidMatrixIndices).toEqual([0, 2])
+      // override で値が確定したキーは赤表示しない
+      expect(invalidMatrixIndices).toEqual([])
     })
 
-    it('一部だけ override の混在ケース（ラベルが不正なキーは赤のまま）', () => {
+    it('override 未設定でラベル不正のキーのみ invalid', () => {
       const kb = parse([['0,0', 'Esc', '0,2']])
       const { invalidMatrixIndices } = buildLayout(kb, { 1: [0, 1] })
-      // index 0/2 は厳密カンマ、1 はラベルが不正なので override があっても赤
-      expect(invalidMatrixIndices).toEqual([1])
+      // override で 1 が救済されるので invalid は無し
+      expect(invalidMatrixIndices).toEqual([])
+    })
+
+    it('override 無し・ラベル不正のキーは invalid', () => {
+      const kb = parse([['Esc', 'Tab']])
+      const { invalidMatrixIndices } = buildLayout(kb)
+      expect(invalidMatrixIndices).toEqual([0, 1])
     })
 
     it('decal キーは invalid 判定の対象外（原配列 index も含まれない）', () => {

@@ -4,7 +4,12 @@ import { storeToRefs } from 'pinia'
 import { useConverterStore } from '../stores/useConverterStore'
 
 const store = useConverterStore()
-const { keyboard, selectedOriginalIndex, matrixOverrides, visibleKeyIndices } = storeToRefs(store)
+const { keyboard, selectedOriginalIndex, matrixOverrides, deletedIndices, visibleKeyIndices } =
+  storeToRefs(store)
+
+const isSelectedDeleted = computed(() =>
+  selectedOriginalIndex.value !== null && deletedIndices.value.has(selectedOriginalIndex.value),
+)
 
 const selectedKey = computed(() => {
   if (selectedOriginalIndex.value === null || !keyboard.value) return null
@@ -112,6 +117,27 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
         <button type="button" class="btn" @click="clear">クリア</button>
         <button type="button" class="btn" @click="goPrev">◀ 前</button>
         <button type="button" class="btn" @click="goNext">次 ▶</button>
+      </div>
+      <div class="pt-2 border-t border-slate-200">
+        <button
+          v-if="!isSelectedDeleted"
+          type="button"
+          class="btn border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+          @click="store.deleteSelectedKey"
+        >
+          🗑️ このキーを設定から削除
+        </button>
+        <button
+          v-else
+          type="button"
+          class="btn border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400"
+          @click="store.restoreSelectedKey"
+        >
+          ↩️ 削除を取り消す
+        </button>
+        <p class="text-xs text-slate-500 mt-1">
+          削除すると info.json の layout からも除外されます
+        </p>
       </div>
     </div>
   </div>

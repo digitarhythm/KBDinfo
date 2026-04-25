@@ -71,9 +71,15 @@ export interface BuildLayoutResult {
   warnings: ReturnType<WarningCollector['list']>
   /**
    * matrix のソースが不正なキーの原配列インデックス集合。
-   * 「KLE ラベルが厳密カンマ形式ではない」場合に含まれる（プレビュー赤表示対象）。
+   * 「KLE ラベルが厳密カンマ形式でない」かつ「override 未設定」の場合に含まれる。
+   * プレビューで赤表示する対象。
    */
   invalidMatrixIndices: number[]
+  /**
+   * 最終 matrix 値が他キーと重複しているキーの原配列インデックス集合。
+   * プレビューで黄表示する対象。
+   */
+  duplicateMatrixIndices: number[]
 }
 
 const matrixKey = (m: MatrixValue): string => m.map((x) => String(x)).join(',')
@@ -81,6 +87,7 @@ const matrixKey = (m: MatrixValue): string => m.map((x) => String(x)).join(',')
 export const buildLayout = (
   keyboard: KleKeyboard,
   overrides: MatrixOverrides = {},
+  deletedIndices: ReadonlySet<number> = new Set(),
 ): BuildLayoutResult => {
   const warnings = new WarningCollector()
   const layout: LayoutKey[] = []
@@ -90,6 +97,7 @@ export const buildLayout = (
 
   keyboard.keys.forEach((key, originalIndex) => {
     if (key.decal) return
+    if (deletedIndices.has(originalIndex)) return
 
     if (hasSecondaryRect(key)) {
       warnings.add(
@@ -114,7 +122,9 @@ export const buildLayout = (
       key0.ry = round6(key.rotation_y)
     }
 
-    if (!isStrictCommaMatrixLabel(key.labels[0])) {
+    // override が設定されていれば赤表示クリア（matrix エディタからの修正は有効な[row,col]）
+    const hasOverride = overrides[originalIndex] !== undefined
+    if (!hasOverride && !isStrictCommaMatrixLabel(key.labels[0])) {
       invalidMatrixIndices.push(originalIndex)
     }
 
@@ -127,11 +137,18 @@ export const buildLayout = (
     visibleIndex += 1
   })
 
+  const duplicateMatrixIndices: number[] = []
   for (const [mkey, idxs] of matrixSeen) {
     if (idxs.length > 1) {
       warnings.add('duplicate-matrix', `matrix ${mkey} が重複 (${idxs.length}キー)`)
+      duplicateMatrixIndices.push(...idxs)
     }
   }
 
-  return { layout, warnings: warnings.list(), invalidMatrixIndices }
+  return {
+    layout,
+    warnings: warnings.list(),
+    invalidMatrixIndices,
+    duplicateMatrixIndices,
+  }
 }

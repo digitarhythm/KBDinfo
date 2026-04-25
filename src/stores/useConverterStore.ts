@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import type { KleKeyboard } from '../types/kle'
 import type { LayoutKey, MatrixCoord } from '../types/qmk'
@@ -12,19 +12,17 @@ import {
   serializeInfoJson,
   KleParseError,
 } from '../converter'
-import { updateKleRawLabels } from '../converter/updateKleRaw'
-
-// KLE の Raw data タブ形式（外側 [...] 無しの行列挙）
-const SAMPLE_KLE = `{name: "Sample 2×2"},
-["0,0", "0,1"],
-["1,0", "1,1"]`
 
 export const useConverterStore = defineStore('converter', () => {
-  const rawInput = ref<string>(SAMPLE_KLE)
+  // KLE RAW テキスト本体。textarea と双方向バインドする。
+  const rawInput = ref<string>('')
+  // 「変換」または JSON 読込で確定後 true。textarea を read-only にする。
+  const isLocked = ref<boolean>(false)
   const keyboard = shallowRef<KleKeyboard | null>(null)
   const parseError = ref<string | null>(null)
 
   const matrixOverrides = ref<MatrixOverrides>({})
+  const deletedIndices = ref<Set<number>>(new Set())
   const metadata = ref<MetadataFormState>(defaultMetadataForm())
   const selectedOriginalIndex = ref<number | null>(null)
 
@@ -39,12 +37,18 @@ export const useConverterStore = defineStore('converter', () => {
 
   const layoutResult = computed(() => {
     if (!keyboard.value) {
-      return { layout: [] as LayoutKey[], warnings: [] as Warning[], invalidMatrixIndices: [] as number[] }
+      return {
+        layout: [] as LayoutKey[],
+        warnings: [] as Warning[],
+        invalidMatrixIndices: [] as number[],
+        duplicateMatrixIndices: [] as number[],
+      }
     }
-    return buildLayout(keyboard.value, matrixOverrides.value)
+    return buildLayout(keyboard.value, matrixOverrides.value, deletedIndices.value)
   })
 
   const invalidMatrixSet = computed<Set<number>>(() => new Set(layoutResult.value.invalidMatrixIndices))
+  const duplicateMatrixSet = computed<Set<number>>(() => new Set(layoutResult.value.duplicateMatrixIndices))
 
   const infoJson = computed(() => buildInfoJson(metadata.value, layoutResult.value.layout))
   const jsonText = computed(() => serializeInfoJson(infoJson.value))
@@ -92,12 +96,29 @@ export const useConverterStore = defineStore('converter', () => {
     }
   }
 
-  // 入力変更時に debounced parse
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null
-  watch(rawInput, () => {
-    if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => parse(), 250)
-  }, { immediate: true })
+  // 「変換」ボタン: 解析が成功したらロック
+  const convertNow = (): void => {
+    parse()
+    if (keyboard.value) isLocked.value = true
+  }
+
+  // 「クリア」ボタン: 全ての状態を初期化
+  const clearAll = (): void => {
+    rawInput.value = ''
+    keyboard.value = null
+    parseError.value = null
+    isLocked.value = false
+    matrixOverrides.value = {}
+    deletedIndices.value = new Set()
+    selectedOriginalIndex.value = null
+  }
+
+  // JSON ファイル読込: テキスト挿入と同時にロック・解析
+  const loadJson = (text: string): void => {
+    rawInput.value = text
+    parse()
+    if (keyboard.value) isLocked.value = true
+  }
 
   const setOverride = (originalIndex: number, matrix: MatrixCoord | null): void => {
     if (matrix === null) {
@@ -113,49 +134,50 @@ export const useConverterStore = defineStore('converter', () => {
     matrixOverrides.value = {}
   }
 
-  // RAW テキストを書き換えるヘルパ。失敗時は parseError に詳細を出す
-  const applyLabelUpdatesToRaw = (updates: Map<number, string>): boolean => {
-    try {
-      rawInput.value = updateKleRawLabels(rawInput.value, updates)
-      return true
-    } catch (e) {
-      parseError.value = e instanceof Error ? e.message : String(e)
-      return false
-    }
+  // matrix エディタからの適用: override に保存（KLE RAW テキストは変更しない）
+  const applyMatrixToKey = (originalIndex: number, matrix: MatrixCoord): void => {
+    setOverride(originalIndex, matrix)
   }
 
-  // matrix エディタからの適用: [row, col] を「row,col」ラベルとして KLE RAW に書き戻す
-  const applyMatrixToKey = (originalIndex: number, matrix: MatrixCoord): boolean => {
-    const newLabel = `${matrix[0]},${matrix[1]}`
-    const ok = applyLabelUpdatesToRaw(new Map([[originalIndex, newLabel]]))
-    if (ok) {
-      // 直接ラベル修正したので override は不要
-      setOverride(originalIndex, null)
-    }
-    return ok
+  // 削除（出力 layout から除外）
+  const deleteSelectedKey = (): void => {
+    if (selectedOriginalIndex.value === null) return
+    const next = new Set(deletedIndices.value)
+    next.add(selectedOriginalIndex.value)
+    deletedIndices.value = next
   }
 
-  const loadSample = (): void => {
-    rawInput.value = SAMPLE_KLE
+  const restoreSelectedKey = (): void => {
+    if (selectedOriginalIndex.value === null) return
+    const next = new Set(deletedIndices.value)
+    next.delete(selectedOriginalIndex.value)
+    deletedIndices.value = next
   }
 
   return {
     rawInput,
+    isLocked,
     keyboard,
     parseError,
     matrixOverrides,
+    deletedIndices,
     metadata,
     selectedOriginalIndex,
     visibleKeyIndices,
     layoutResult,
     invalidMatrixSet,
+    duplicateMatrixSet,
     infoJson,
     jsonText,
     warnings,
     parse,
+    convertNow,
+    clearAll,
+    loadJson,
     setOverride,
     clearOverrides,
     applyMatrixToKey,
-    loadSample,
+    deleteSelectedKey,
+    restoreSelectedKey,
   }
 })

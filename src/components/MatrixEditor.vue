@@ -118,7 +118,7 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
         <button type="button" class="btn" @click="goPrev">◀ 前</button>
         <button type="button" class="btn" @click="goNext">次 ▶</button>
       </div>
-      <div class="pt-2 border-t border-slate-200">
+      <div class="pt-2 border-t border-slate-300">
         <button
           v-if="!isSelectedDeleted"
           type="button"

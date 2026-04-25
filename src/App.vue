@@ -45,7 +45,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleGlobalClick))
         <WarningsPanel />
       </div>
     </main>
-    <footer class="bg-slate-100 border-t border-slate-200 px-4 py-2 text-xs text-slate-500 text-center">
+    <footer class="bg-slate-100 border-t border-slate-300 px-4 py-2 text-xs text-slate-500 text-center">
       KBDinfo v{{ version }} — qmk.fm/converter 代替ツール / すべての処理はブラウザ内で完結します
     </footer>
   </div>

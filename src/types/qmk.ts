@@ -47,7 +47,38 @@ export interface Features {
   nkro?: boolean
   backlight?: boolean
   rgblight?: boolean
+  rgb_matrix?: boolean
   audio?: boolean
+}
+
+export interface Ws2812Config {
+  pin: string
+  driver?: string
+}
+
+export interface RgbMatrixDefault {
+  animation?: string
+  hue?: number
+  sat?: number
+  val?: number
+  speed?: number
+}
+
+export type RgbMatrixAnimations = Record<string, boolean>
+
+export interface RgbMatrixConfig {
+  driver: string
+  led_count?: number
+  max_brightness?: number
+  sleep?: boolean
+  timeout?: number
+  hue_steps?: number
+  sat_steps?: number
+  val_steps?: number
+  speed_steps?: number
+  animations?: RgbMatrixAnimations
+  default?: RgbMatrixDefault
+  split_count?: [number, number]
 }
 
 export interface SplitBootmagic {
@@ -73,12 +104,32 @@ export interface SplitSerial {
   pin: string
 }
 
+export interface RotaryEncoder {
+  pin_a: string
+  pin_b: string
+  resolution?: number
+}
+
+export interface EncoderConfig {
+  rotary: RotaryEncoder[]
+}
+
+export interface SplitEncoderSide {
+  rotary: RotaryEncoder[]
+}
+
+export interface SplitEncoder {
+  right?: SplitEncoderSide
+  left?: SplitEncoderSide
+}
+
 export interface SplitConfig {
   enabled?: boolean
   bootmagic?: SplitBootmagic
   handedness?: SplitHandedness
   matrix_pins?: SplitMatrixPins
   serial?: SplitSerial
+  encoder?: SplitEncoder
 }
 
 export interface InfoJson {
@@ -90,7 +141,10 @@ export interface InfoJson {
   features?: Features
   matrix_pins?: MatrixPins
   diode_direction?: DiodeDirection
+  encoder?: EncoderConfig
   debounce?: number
+  rgb_matrix?: RgbMatrixConfig
+  ws2812?: Ws2812Config
   split?: SplitConfig
   processor?: string
   bootloader?: string

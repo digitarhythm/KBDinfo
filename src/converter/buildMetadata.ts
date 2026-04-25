@@ -1,6 +1,20 @@
 import type { KleKeyboard } from '../types/kle'
-import type { InfoJson, LayoutKey, SplitConfig } from '../types/qmk'
-import type { MetadataFormState, SplitFormState } from '../types/app'
+import type {
+  EncoderConfig,
+  InfoJson,
+  LayoutKey,
+  RgbMatrixConfig,
+  RgbMatrixDefault,
+  RotaryEncoder,
+  SplitConfig,
+  Ws2812Config,
+} from '../types/qmk'
+import type {
+  MetadataFormState,
+  RgbMatrixFormState,
+  RotaryEncoderForm,
+  SplitFormState,
+} from '../types/app'
 
 const splitCsv = (s: string): string[] =>
   s.split(/[,\s]+/).map((x) => x.trim()).filter((x) => x.length > 0)
@@ -55,9 +69,23 @@ export const buildInfoJson = (
     info.diode_direction = form.diode_direction
   }
 
+  const encoder = buildEncoder(form.encoder_rotary)
+  if (encoder) info.encoder = encoder
+
   const debounceNum = Number(form.debounce)
   if (form.debounce !== '' && Number.isFinite(debounceNum) && debounceNum >= 0) {
     info.debounce = debounceNum
+  }
+
+  const rgb = buildRgbMatrix(form.rgb_matrix)
+  if (rgb) {
+    info.rgb_matrix = rgb.config
+    if (rgb.ws2812) info.ws2812 = rgb.ws2812
+    if (info.features) {
+      info.features = { ...info.features, rgb_matrix: true }
+    } else {
+      info.features = { rgb_matrix: true }
+    }
   }
 
   const split = buildSplit(form.split)
@@ -67,6 +95,103 @@ export const buildInfoJson = (
   if (form.bootloader) info.bootloader = form.bootloader
 
   return info
+}
+
+const numOrUndef = (s: string, opts?: { min?: number; max?: number }): number | undefined => {
+  if (s === '') return undefined
+  const n = Number(s)
+  if (!Number.isFinite(n)) return undefined
+  if (opts?.min !== undefined && n < opts.min) return undefined
+  if (opts?.max !== undefined && n > opts.max) return undefined
+  return n
+}
+
+const buildRgbMatrixDefault = (s: RgbMatrixFormState): RgbMatrixDefault | undefined => {
+  const out: RgbMatrixDefault = {}
+  if (s.default_animation) out.animation = s.default_animation
+  const hue = numOrUndef(s.default_hue, { min: 0, max: 255 })
+  if (hue !== undefined) out.hue = hue
+  const sat = numOrUndef(s.default_sat, { min: 0, max: 255 })
+  if (sat !== undefined) out.sat = sat
+  const val = numOrUndef(s.default_val, { min: 0, max: 255 })
+  if (val !== undefined) out.val = val
+  const speed = numOrUndef(s.default_speed, { min: 0, max: 255 })
+  if (speed !== undefined) out.speed = speed
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+interface BuildRgbResult {
+  config: RgbMatrixConfig
+  ws2812?: Ws2812Config
+}
+
+const buildRgbMatrix = (s: RgbMatrixFormState): BuildRgbResult | null => {
+  if (!s.enabled) return null
+
+  const config: RgbMatrixConfig = { driver: s.driver || 'ws2812' }
+
+  const ledCount = numOrUndef(s.led_count, { min: 1 })
+  if (ledCount !== undefined) config.led_count = ledCount
+
+  const maxBri = numOrUndef(s.max_brightness, { min: 0, max: 255 })
+  if (maxBri !== undefined) config.max_brightness = maxBri
+
+  if (s.sleep) config.sleep = true
+
+  const timeout = numOrUndef(s.timeout, { min: 0 })
+  if (timeout !== undefined) config.timeout = timeout
+
+  const hueSteps = numOrUndef(s.hue_steps, { min: 1 })
+  if (hueSteps !== undefined) config.hue_steps = hueSteps
+  const satSteps = numOrUndef(s.sat_steps, { min: 1 })
+  if (satSteps !== undefined) config.sat_steps = satSteps
+  const valSteps = numOrUndef(s.val_steps, { min: 1 })
+  if (valSteps !== undefined) config.val_steps = valSteps
+  const speedSteps = numOrUndef(s.speed_steps, { min: 1 })
+  if (speedSteps !== undefined) config.speed_steps = speedSteps
+
+  const enabledAnims = Object.entries(s.animations)
+    .filter(([, v]) => v === true)
+    .reduce<Record<string, boolean>>((acc, [k]) => {
+      acc[k] = true
+      return acc
+    }, {})
+  if (Object.keys(enabledAnims).length > 0) config.animations = enabledAnims
+
+  const def = buildRgbMatrixDefault(s)
+  if (def) config.default = def
+
+  const splitL = numOrUndef(s.split_count_left, { min: 0 })
+  const splitR = numOrUndef(s.split_count_right, { min: 0 })
+  if (splitL !== undefined && splitR !== undefined) {
+    config.split_count = [splitL, splitR]
+  }
+
+  let ws2812: Ws2812Config | undefined
+  if ((s.driver || 'ws2812') === 'ws2812' && s.ws2812_pin.trim()) {
+    ws2812 = { pin: s.ws2812_pin.trim() }
+  }
+
+  return { config, ws2812 }
+}
+
+const buildRotaryList = (forms: RotaryEncoderForm[]): RotaryEncoder[] => {
+  const out: RotaryEncoder[] = []
+  for (const f of forms) {
+    const a = f.pin_a.trim()
+    const b = f.pin_b.trim()
+    if (!a || !b) continue
+    const r: RotaryEncoder = { pin_a: a, pin_b: b }
+    const res = Number(f.resolution)
+    if (f.resolution !== '' && Number.isFinite(res) && res > 0) r.resolution = res
+    out.push(r)
+  }
+  return out
+}
+
+const buildEncoder = (forms: RotaryEncoderForm[]): EncoderConfig | null => {
+  const rotary = buildRotaryList(forms)
+  return rotary.length > 0 ? { rotary } : null
 }
 
 const parseMatrixPair = (s: string): [number, number] | null => {
@@ -99,6 +224,11 @@ const buildSplit = (s: SplitFormState): SplitConfig | null => {
       driver: s.serial_driver || 'vendor',
       pin: s.serial_pin.trim(),
     }
+  }
+
+  const rightRotary = buildRotaryList(s.encoder_right_rotary)
+  if (rightRotary.length > 0) {
+    out.encoder = { right: { rotary: rightRotary } }
   }
 
   return Object.keys(out).length > 0 ? out : null

@@ -14,6 +14,40 @@ export interface Warning {
   keyIndex?: number
 }
 
+export interface RotaryEncoderForm {
+  pin_a: string
+  pin_b: string
+  resolution: string
+}
+
+export const emptyEncoder = (): RotaryEncoderForm => ({
+  pin_a: '',
+  pin_b: '',
+  resolution: '',
+})
+
+export interface RgbMatrixFormState {
+  enabled: boolean
+  driver: string
+  led_count: string
+  ws2812_pin: string
+  max_brightness: string
+  sleep: boolean
+  timeout: string
+  hue_steps: string
+  sat_steps: string
+  val_steps: string
+  speed_steps: string
+  animations: Record<string, boolean>
+  default_animation: string
+  default_hue: string
+  default_sat: string
+  default_val: string
+  default_speed: string
+  split_count_left: string
+  split_count_right: string
+}
+
 export interface SplitFormState {
   enabled: boolean
   bootmagic_matrix: string
@@ -22,6 +56,7 @@ export interface SplitFormState {
   matrix_pins_right_cols: string
   serial_driver: string
   serial_pin: string
+  encoder_right_rotary: RotaryEncoderForm[]
 }
 
 export interface MetadataFormState {
@@ -39,7 +74,9 @@ export interface MetadataFormState {
     cols: string
   }
   diode_direction: DiodeDirection
+  encoder_rotary: RotaryEncoderForm[]
   debounce: string
+  rgb_matrix: RgbMatrixFormState
   split: SplitFormState
   processor: string
   bootloader: string
@@ -68,7 +105,29 @@ export const defaultMetadataForm = (): MetadataFormState => ({
     cols: '',
   },
   diode_direction: 'COL2ROW',
+  encoder_rotary: [],
   debounce: '',
+  rgb_matrix: {
+    enabled: false,
+    driver: 'ws2812',
+    led_count: '',
+    ws2812_pin: '',
+    max_brightness: '',
+    sleep: false,
+    timeout: '',
+    hue_steps: '',
+    sat_steps: '',
+    val_steps: '',
+    speed_steps: '',
+    animations: {},
+    default_animation: '',
+    default_hue: '',
+    default_sat: '',
+    default_val: '',
+    default_speed: '',
+    split_count_left: '',
+    split_count_right: '',
+  },
   split: {
     enabled: false,
     bootmagic_matrix: '',
@@ -77,6 +136,7 @@ export const defaultMetadataForm = (): MetadataFormState => ({
     matrix_pins_right_cols: '',
     serial_driver: 'vendor',
     serial_pin: '',
+    encoder_right_rotary: [],
   },
   processor: 'atmega32u4',
   bootloader: 'atmel-dfu',

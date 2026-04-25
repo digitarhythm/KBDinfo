@@ -39,7 +39,7 @@ const overrideLabel = (i: number): string | null => {
     <div v-if="!keyboard" class="text-sm text-slate-500 py-8 text-center">
       KLE RAW データを貼り付けて「変換」ボタンを押すか、「JSON読み込み」してください
     </div>
-    <div v-else class="overflow-auto bg-slate-100 rounded border border-slate-200">
+    <div v-else class="overflow-auto bg-slate-100 rounded border border-slate-300">
       <svg
         :viewBox="vb.str"
         :width="vb.w"

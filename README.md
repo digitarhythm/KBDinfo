@@ -1,7 +1,5 @@
 ﻿# KBDinfo
 
-- [GitHub Pages](https://digitarhythm.github.io/KBDinfo)
-
 Keyboard Layout Editor（KLE）の RAW データを QMK Firmware の `info.json` に変換するブラウザ専用ツール。
 
 公開先: **https://digitarhythm.github.io/KBDinfo/**

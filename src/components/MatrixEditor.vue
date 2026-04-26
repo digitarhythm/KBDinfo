@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useConverterStore } from '../stores/useConverterStore'
 
 const store = useConverterStore()
 const { keyboard, selectedOriginalIndex, matrixOverrides, deletedIndices, visibleKeyIndices } =
   storeToRefs(store)
+const { t } = useI18n()
 
 const isSelectedDeleted = computed(() =>
   selectedOriginalIndex.value !== null && deletedIndices.value.has(selectedOriginalIndex.value),
@@ -81,18 +83,18 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
 
 <template>
   <div class="panel">
-    <div class="panel-title">🎯 matrix 編集</div>
+    <div class="panel-title">{{ t('matrixEditor.title') }}</div>
     <div v-if="!selectedKey" class="text-sm text-slate-500">
-      プレビュー上でキーをクリックして選択してください
+      {{ t('matrixEditor.noSelection') }}
     </div>
     <div v-else class="space-y-3">
       <div class="text-xs text-slate-500">
-        選択中キー #{{ selectedOriginalIndex }}
+        {{ t('matrixEditor.selectedKey', { idx: selectedOriginalIndex ?? '' }) }}
         <span v-if="labelPreview" class="ml-2">「{{ labelPreview.split('\n')[0] }}」</span>
       </div>
       <div class="grid grid-cols-2 gap-2">
         <div>
-          <label class="label">row</label>
+          <label class="label">{{ t('matrixEditor.row') }}</label>
           <input
             v-model.number="row"
             type="number"
@@ -102,7 +104,7 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
           />
         </div>
         <div>
-          <label class="label">col</label>
+          <label class="label">{{ t('matrixEditor.col') }}</label>
           <input
             v-model.number="col"
             type="number"
@@ -113,10 +115,10 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="btn btn-primary" @click="apply">割当</button>
-        <button type="button" class="btn" @click="clear">クリア</button>
-        <button type="button" class="btn" @click="goPrev">◀ 前</button>
-        <button type="button" class="btn" @click="goNext">次 ▶</button>
+        <button type="button" class="btn btn-primary" @click="apply">{{ t('matrixEditor.apply') }}</button>
+        <button type="button" class="btn" @click="clear">{{ t('matrixEditor.clear') }}</button>
+        <button type="button" class="btn" @click="goPrev">{{ t('matrixEditor.prev') }}</button>
+        <button type="button" class="btn" @click="goNext">{{ t('matrixEditor.next') }}</button>
       </div>
       <div class="pt-2 border-t border-slate-300">
         <button
@@ -125,7 +127,7 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
           class="btn border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
           @click="store.deleteSelectedKey"
         >
-          🗑️ このキーを設定から削除
+          {{ t('matrixEditor.delete') }}
         </button>
         <button
           v-else
@@ -133,10 +135,10 @@ const labelPreview = computed(() => selectedKey.value?.labels[0] ?? '')
           class="btn border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400"
           @click="store.restoreSelectedKey"
         >
-          ↩️ 削除を取り消す
+          {{ t('matrixEditor.restore') }}
         </button>
         <p class="text-xs text-slate-500 mt-1">
-          削除すると info.json の layout からも除外されます
+          {{ t('matrixEditor.deleteHint') }}
         </p>
       </div>
     </div>

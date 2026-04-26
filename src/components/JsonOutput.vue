@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useConverterStore } from '../stores/useConverterStore'
 
 const store = useConverterStore()
 const { jsonText, keyboard, metadata } = storeToRefs(store)
+const { t } = useI18n()
 const copied = ref(false)
 
 const copy = async (): Promise<void> => {
@@ -34,13 +36,13 @@ const download = (): void => {
 <template>
   <div class="panel">
     <div class="panel-title">
-      📤 info.json 出力
+      {{ t('jsonOutput.title') }}
       <div class="ml-auto flex gap-2">
         <button type="button" class="btn" :disabled="!keyboard" @click="copy">
-          {{ copied ? '✓ コピー済み' : 'コピー' }}
+          {{ copied ? t('jsonOutput.copied') : t('jsonOutput.copy') }}
         </button>
         <button type="button" class="btn btn-primary" :disabled="!keyboard" @click="download">
-          ダウンロード
+          {{ t('jsonOutput.download') }}
         </button>
       </div>
     </div>

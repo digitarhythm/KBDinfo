@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useConverterStore } from '../stores/useConverterStore'
 
 const store = useConverterStore()
 const { rawInput, isLocked, parseError } = storeToRefs(store)
+const { t } = useI18n()
 
 const fileInput = (e: Event): void => {
   const input = e.target as HTMLInputElement
@@ -22,11 +24,11 @@ const fileInput = (e: Event): void => {
 <template>
   <div class="panel">
     <div class="panel-title">
-      📝 KLE RAW 入力
+      {{ t('kleInput.title') }}
       <div class="ml-auto flex gap-2">
-        <button type="button" class="btn" @click="store.clearAll">クリア</button>
+        <button type="button" class="btn" @click="store.clearAll">{{ t('kleInput.clear') }}</button>
         <label class="btn cursor-pointer" :class="{ 'opacity-50 cursor-not-allowed': isLocked }">
-          JSON読み込み
+          {{ t('kleInput.loadJson') }}
           <input
             type="file"
             accept=".json,.txt,application/json"
@@ -43,11 +45,11 @@ const fileInput = (e: Event): void => {
       :class="['input code w-full font-mono text-xs', isLocked ? 'bg-slate-100 cursor-not-allowed' : '']"
       rows="8"
       spellcheck="false"
-      placeholder='keyboard-layout-editor.com の「Raw data」タブの内容、または「Download JSON」で取得した JSON を貼り付け、「変換」ボタンを押してください'
+      :placeholder="t('kleInput.placeholder')"
     />
     <div class="mt-2 flex items-center gap-2">
       <span v-if="isLocked" class="text-xs text-slate-500">
-        🔒 ロック中: 編集するには「クリア」を押してから貼り直してください
+        {{ t('kleInput.locked') }}
       </span>
       <button
         type="button"
@@ -55,7 +57,7 @@ const fileInput = (e: Event): void => {
         :disabled="isLocked || !rawInput.trim()"
         @click="store.convertNow"
       >
-        変換
+        {{ t('kleInput.convert') }}
       </button>
     </div>
     <p v-if="parseError" class="mt-2 text-sm rounded bg-red-50 border border-red-300 text-red-700 p-2">

@@ -38,7 +38,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleGlobalClick))
 
 <template>
   <div class="min-h-screen flex flex-col">
-    <header class="bg-slate-900 text-white px-4 py-3 shadow">
+    <header class="bg-slate-900 text-white px-4 py-3 shadow sticky top-0 z-20">
       <div class="max-w-[1600px] mx-auto flex items-center gap-3">
         <h1 class="text-lg font-semibold">KBDinfo</h1>
         <span class="text-xs text-slate-300">{{ t('app.subtitle') }}</span>
